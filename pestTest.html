@@ -12,7 +12,7 @@
 		 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script> <!--For similarity plugin-->
 		 
 		 <!--For the PEST testing-->
-		 <script src = "pest.js"></script>
+		 <script src = "pestWithClosures.js"></script>
 		 
 		 
 		<link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/black-tie/jquery-ui.min.css" rel="stylesheet" type="text/css"></link><!--For similarity plugin-->
@@ -57,7 +57,7 @@
 			max_step_size: 0.7
 		};
 		
-		initializePest(pestParameters);
+		var myPest =  new pest(pestParameters);
 		
 		//Prototype of a trial to be modified in the functions based on what is needed
 		//coherent direction and coherence parameters still need to be specified (will do so in the makeTwoTrialsArray function below)
@@ -299,7 +299,7 @@
 			if(coherenceType == "staircase"){
 				tempTrial.trialType = "actual";
 				tempTrial.coherence = function(){
-					return pest(jsPsych.data.getLastTrialData().correct);
+					return myPest.staircase(jsPsych.data.getLastTrialData().correct);
 				} //To be evaluated at the start of trial
 			}
 			//Else if easy, then set coherence to easy coherence level
