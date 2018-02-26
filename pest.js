@@ -45,10 +45,10 @@ function pest(dataObject){
 			
 			//Check if the subject responded correctly on the previous trial
 			if (lastTrialWasCorrect == true){
-				responseWasCorrect(); //This function will housekeep for 3Down/1Up and call the changeStepSizePEST function
+				responseWasCorrect(); //This function will housekeep for x-Down/y-Up and call the changeStepSizePEST function
 			}
 			else if (lastTrialWasCorrect == false){
-				responseWasIncorrect(); //This function will housekeep for 3Down/1Up and call the changeStepSizePEST function
+				responseWasIncorrect(); //This function will housekeep for x-Down/y-Up and call the changeStepSizePEST function
 			}
 			else{
 				console.log("Error: lastTrialWasCorrect is neither true nor false!");
@@ -61,7 +61,10 @@ function pest(dataObject){
 			firstTrial = false;
 		}//End of if(!firstTrial)
 		
+		console.log("Current step size = " + currentStepSize);
+		
 		console.log("currentIntensity in staircase() is " + currentIntensity);
+		
 		//Return the currentIntensity into the trial
 		return currentIntensity; 
 		
@@ -159,7 +162,6 @@ function pest(dataObject){
 			
 			//Half the step size everytime it reverses [Rule 1]
 			halveStepSize();
-			console.log("Step size halved.");
 			
 			//Step size did not double, so we reset it back to false (this variable is used below in the else statement)
 			stepSizeJustDoubled = false;
@@ -170,7 +172,7 @@ function pest(dataObject){
 			//Increment the streak counter
 			stepStreakCounter++;
 			
-			//If the streak has hit the streak threshold, then increase the step size by 2 [Rule 3]
+			//If the streak has hit the streak threshold, then increase the step size by doubling it [Rule 3]
 			if (stepStreakCounter >= currentStepThreshold){
 				doubleStepSize();
 				stepSizeJustDoubled = true;
@@ -179,15 +181,13 @@ function pest(dataObject){
 			//Else step size did not double
 			else{
 				stepSizeJustDoubled = false;
-				console.log("Step size remained the same because not hit threshold yet")
+				console.log("Step size remained the same because not hit threshold yet.");
 			}
 			
 			//If we go in the same direction, we stay with the same step size [Rule 2]
 			//Unless we go 3 steps in the same direction, in which case we implement Rule 3 above
 			
 		}//End of else (not reversal)
-		
-		console.log("New step size = " + currentStepSize);
 		
 	}//End of changeStepSizePEST
 
@@ -201,9 +201,11 @@ function pest(dataObject){
 		//Check to make sure that it is above the minimum
 		if(currentStepSize * 0.5 > minimumStepSize){
 			currentStepSize *= 0.5;
+			console.log("Step size halved.");
 		}
 		//If not, then set it to the minimum
 		else{
+			console.log("Minimum step size reached. Setting currentStepSize to minimumStepSize.");
 			currentStepSize = minimumStepSize;
 		}
 	}//End of halveStepSize
@@ -216,6 +218,7 @@ function pest(dataObject){
 		}
 		//If not, then set it to the maximum
 		else{
+			console.log("Maximum step size reached. Setting currentStepSize to maximumStepSize.");
 			currentStepSize = maximumStepSize;
 		}
 	}//End of doubleStepSize
@@ -228,6 +231,13 @@ function pest(dataObject){
 		}
 		//Else just set it to the minimum intensity allowed
 		else{
+			
+			//Only update the step size if the lower intensity limit and the current intensity is not the same
+			if(currentIntensity !== lowerIntensityLimit){
+				currentStepSize = currentIntensity - lowerIntensityLimit;
+				console.log("lowerIntensityLimit reached. currentStepSize: " + currentStepSize);
+			}
+			
 			currentIntensity = lowerIntensityLimit;
 		}
 	}//End of decreaseIntensity
@@ -240,9 +250,17 @@ function pest(dataObject){
 		}
 		//Else just set it to the minimum intensity allowed
 		else{
+			
+			//Only update the step size if the upper intensity limit and the current intensity is not the same
+			if(currentIntensity !== upperIntensityLimit){
+				currentStepSize = upperIntensityLimit - currentIntensity;
+				console.log("upperIntensityLimit reached. currentStepSize: " + currentStepSize);
+			}
+			
 			currentIntensity = upperIntensityLimit;
 		}
 	}//End of decreaseIntensity
 
 	//----------------Staircasing Functions End------------------
-}
+	
+}//End of function pest(dataObject)
