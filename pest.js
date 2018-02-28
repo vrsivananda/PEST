@@ -26,6 +26,7 @@ function pest(dataObject){
 	var currentStepThreshold = originalStepThreshold; //Global variable to hold the current step threshold
 	var firstTrial = true;
 	var firstStep = true;
+	var limitHit = false; //Whether or not it has hit the upper or lower limit
 	var previousStepDirection; //Global variable to hold the previous step direction 
 	var currentStepDirection; //Global variable to hold the current step direction
 	var stepStreakCounter = 0; //Counter for streaks of steps in the same direction
@@ -166,8 +167,8 @@ function pest(dataObject){
 			//Step size did not double, so we reset it back to false (this variable is used below in the else statement)
 			stepSizeJustDoubled = false;
 		}
-		//If step was not a reversal (went in the same direction)
-		else{
+		//If step was not a reversal (went in the same direction) AND it is not at the limit
+		else if(!limitHit){
 			
 			//Increment the streak counter
 			stepStreakCounter++;
@@ -228,17 +229,24 @@ function pest(dataObject){
 		//Check that it will still be in the range after decrease
 		if(intensityInRange(currentIntensity - currentStepSize)){
 			currentIntensity -= currentStepSize;
+			
+			//Set the variable to keep track that we have not hit the limit such that we update the step size
+			limitHit = false;
 		}
 		//Else just set it to the minimum intensity allowed
 		else{
 			
 			//Only update the step size if the lower intensity limit and the current intensity is not the same
-			if(currentIntensity !== lowerIntensityLimit){
+			if(currentIntensity !== lowerIntensityLimit && !limitHit){
 				currentStepSize = currentIntensity - lowerIntensityLimit;
 				console.log("lowerIntensityLimit reached. currentStepSize: " + currentStepSize);
 			}
 			
 			currentIntensity = lowerIntensityLimit;
+				
+			//Set the variable to keep track that we have hit the limit such that we do not update the step size
+			limitHit = true;
+			
 		}
 	}//End of decreaseIntensity
 
@@ -247,17 +255,23 @@ function pest(dataObject){
 		//Check that it will still be in the range after increase
 		if(intensityInRange(currentIntensity + currentStepSize)){
 			currentIntensity += currentStepSize;
+			
+			//Set the variable to keep track that we have not hit the limit such that we update the step size
+			limitHit = false;
 		}
 		//Else just set it to the minimum intensity allowed
 		else{
 			
-			//Only update the step size if the upper intensity limit and the current intensity is not the same
-			if(currentIntensity !== upperIntensityLimit){
+			//Only update the step size if the upper intensity limit and the current intensity is not the same, and we have not hit the limit
+			if(currentIntensity !== upperIntensityLimit && !limitHit){
 				currentStepSize = upperIntensityLimit - currentIntensity;
 				console.log("upperIntensityLimit reached. currentStepSize: " + currentStepSize);
 			}
 			
 			currentIntensity = upperIntensityLimit;
+			
+			//Set the variable to keep track that we have hit the limit such that we do not update the step size
+			limitHit = true;
 		}
 	}//End of decreaseIntensity
 
