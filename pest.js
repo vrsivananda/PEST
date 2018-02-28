@@ -236,8 +236,8 @@ function pest(dataObject){
 		//Else just set it to the minimum intensity allowed
 		else{
 			
-			//Only update the step size if the lower intensity limit and the current intensity is not the same
-			if(currentIntensity !== lowerIntensityLimit && !limitHit){
+			//Only update the step size if we have not hit the lower or upper limit
+			if(!limitHit){
 				currentStepSize = currentIntensity - lowerIntensityLimit;
 				console.log("lowerIntensityLimit reached. currentStepSize: " + currentStepSize);
 			}
@@ -262,8 +262,8 @@ function pest(dataObject){
 		//Else just set it to the minimum intensity allowed
 		else{
 			
-			//Only update the step size if the upper intensity limit and the current intensity is not the same, and we have not hit the limit
-			if(currentIntensity !== upperIntensityLimit && !limitHit){
+			//Only update the step size if we have not hit the lower or upper limit
+			if(!limitHit){
 				currentStepSize = upperIntensityLimit - currentIntensity;
 				console.log("upperIntensityLimit reached. currentStepSize: " + currentStepSize);
 			}
