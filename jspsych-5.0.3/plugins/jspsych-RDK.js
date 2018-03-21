@@ -46,8 +46,7 @@ jsPsych.plugins["RDK"] = (function() {
 		trial.trial_duration = trial.trial_duration || 500;
 		trial.number_of_dots = trial.number_of_dots || 300;
 		trial.number_of_sets = trial.number_of_sets || 1;
-		trial.coherent_direction = trial.coherent_direction || 0; 
-		trial.coherence = trial.coherence || 0.5;
+		trial.coherent_direction = trial.coherent_direction || 0;
 		trial.dot_radius = trial.dot_radius || 2;
 		trial.dot_life = trial.dot_life || -1;
 		trial.move_distance = trial.move_distance || 1;
@@ -58,7 +57,18 @@ jsPsych.plugins["RDK"] = (function() {
 		trial.RDK_type = trial.RDK_type || 3;
 		trial.aperture_type = trial.aperture_type || 2;
 		trial.reinsert_type = trial.reinsert_type || 2;
+		trial.aperture_center_x = trial.aperture_center_x || window.innerWidth/2;
+		trial.aperture_center_y = trial.aperture_center_y || window.innerHeight/2;
+		trial.fixation_cross = trial.fixation_cross || false; 
+		trial.fixation_cross_width = trial.fixation_cross_width || 20; 
+		trial.fixation_cross_height = trial.fixation_cross_height || 20; 
+		trial.fixation_cross_color = trial.fixation_cross_color || "black";
+		trial.fixation_cross_thickness = trial.fixation_cross_thickness || 1; 
 		
+		//Coherence can be zero, but logical operators evaluate it to false. So we do it manually
+		if(typeof trial.coherence === 'undefined'){
+			trial.coherence = 0.5;
+		}
 
 		//Logical operators won't work for boolean parameters like they do for non-boolean parameters above, so we do it manually
 		if (typeof trial.response_ends_trial === 'undefined') {
@@ -83,6 +93,8 @@ jsPsych.plugins["RDK"] = (function() {
 		var apertureHeight = trial.aperture_height; //How many pixels high the aperture is. Only relevant for ellipse and rectangle apertures. For circle and square, this is ignored.
 		var dotColor = trial.dot_color; //Color of the dots
 		var backgroundColor = trial.background_color; //Color of the background
+		var apertureCenterX = trial.aperture_center_x; // The x-coordinate of center of the aperture on the screen, in pixels
+		var apertureCenterY = trial.aperture_center_y; // The y-coordinate of center of the aperture on the screen, in pixels
 		
 
 		/* RDK type parameter
@@ -128,6 +140,13 @@ jsPsych.plugins["RDK"] = (function() {
 		2 - Appear on the opposite edge of the aperture (Random if square or rectangle, reflected about origin in circle and ellipse)
 		*/
 		var reinsertType = trial.reinsert_type;
+		
+		//Fixation Cross Parameters
+		var fixationCross = trial.fixation_cross; true; //To display or not to display the cross
+		var fixationCrossWidth = trial.fixation_cross_width;  //The width of the fixation cross in pixels
+		var fixationCrossHeight = trial.fixation_cross_height; //The height of the fixation cross in pixels
+		var fixationCrossColor = trial.fixation_cross_color; //The color of the fixation cross
+		var fixationCrossThickness = trial.fixation_cross_thickness; //The thickness of the fixation cross, must be positive number above 1
 
 
 
@@ -203,6 +222,9 @@ jsPsych.plugins["RDK"] = (function() {
 		
 		//Variable to control the frame rate, to ensure that the first frame is skipped because it follows a different timing
 		var firstFrame = true; //Used to skip the first frame in animate function below (in animateDotMotion function)
+		
+		//Variable to start the timer when the time comes
+		var timerHasStarted = false;
 
 		//Initialize object to store the response data. Default values of -1 are used if the trial times out and the subject has not pressed a valid key
 		var response = {
@@ -365,7 +387,7 @@ jsPsych.plugins["RDK"] = (function() {
 		function initializeApertureParameters() {
 			//For circle and square
 			if (apertureType == 1 || apertureType == 3) {
-				horizontalAxis = verticalAxis = apertureWidth / 2;
+				horizontalAxis = verticalAxis = apertureWidth/2;
 			}
 			//For ellipse and rectangle
 			else if (apertureType == 2 || apertureType == 4) {
@@ -486,6 +508,26 @@ jsPsych.plugins["RDK"] = (function() {
 				ctx.fillStyle = dotColor;
 				ctx.fill();
 			}
+      
+		    //Draw the fixation cross if we want it
+		    if(fixationCross === true){
+		      
+		      //Horizontal line
+		      ctx.beginPath();
+		      ctx.lineWidth = fixationCrossThickness;
+		      ctx.moveTo(width/2 - fixationCrossWidth, height/2);
+		      ctx.lineTo(width/2 + fixationCrossWidth, height/2);
+		      ctx.fillStyle = fixationCrossColor;
+		      ctx.stroke();
+		      
+		      //Vertical line
+		      ctx.beginPath();
+		      ctx.lineWidth = fixationCrossThickness;
+		      ctx.moveTo(width/2, height/2 - fixationCrossHeight);
+		      ctx.lineTo(width/2, height/2 + fixationCrossHeight);
+		      ctx.fillStyle = fixationCrossColor;
+		      ctx.stroke();
+		    }
 		}
 
 		//Update the dots with their new location
@@ -590,7 +632,7 @@ jsPsych.plugins["RDK"] = (function() {
 			}
 			//For square and rectangle
 			if (apertureType == 3 || apertureType == 4) {
-				if (dot.x < (width / 2) - horizontalAxis || dot.x > (width / 2) + horizontalAxis || dot.y < (height / 2) - verticalAxis || dot.y > (height / 2) + verticalAxis) {
+				if (dot.x < (apertureCenterX) - horizontalAxis || dot.x > (apertureCenterX) + horizontalAxis || dot.y < (apertureCenterY) - verticalAxis || dot.y > (apertureCenterY) + verticalAxis) {
 					return true;
 				} else {
 					return false;
@@ -656,16 +698,16 @@ jsPsych.plugins["RDK"] = (function() {
 				dot.y -= dot.latestYMove;
 
 				//Move the dot to the position relative to the origin to be reflected about the origin
-				dot.x -= width / 2;
-				dot.y -= height / 2;
+				dot.x -= apertureCenterX;
+				dot.y -= apertureCenterY;
 
 				//Reflect the dot about the origin
 				dot.x = -dot.x;
 				dot.y = -dot.y;
 
 				//Move the dot back to the center of the screen
-				dot.x += width / 2;
-				dot.y += height / 2;
+				dot.x += apertureCenterX;
+				dot.y += apertureCenterY;
 
 			} //End of if apertureType == 1 | == 2
 
@@ -701,19 +743,19 @@ jsPsych.plugins["RDK"] = (function() {
 				//Generate a bounded random number to determine if the dot should appear on the vertical edge or the horizontal edge
 				if (weightOnVerticalEdge > (weightOnHorizontalEdge + weightOnVerticalEdge) * Math.random()) { //If yes, appear on the left or right edge (vertical edge)
 					if (dot.latestXMove < 0) { //If dots move left, appear on right edge
-						dot.x = width / 2 + horizontalAxis;
-						dot.y = randomNumberBetween((height / 2) - verticalAxis, (height / 2) + verticalAxis);
+						dot.x = apertureCenterX + horizontalAxis;
+						dot.y = randomNumberBetween((apertureCenterY) - verticalAxis, (apertureCenterY) + verticalAxis);
 					} else { //Else dots move right, so they should appear on the left edge
-						dot.x = width / 2 - horizontalAxis;
-						dot.y = randomNumberBetween((height / 2) - verticalAxis, (height / 2) + verticalAxis);
+						dot.x = apertureCenterX - horizontalAxis;
+						dot.y = randomNumberBetween((apertureCenterY) - verticalAxis, (apertureCenterY) + verticalAxis);
 					}
 				} else { //Else appear on the top or bottom edge (horizontal edge)
 					if (dot.latestYMove < 0) { //If dots move upwards, then appear on bottom edge
-						dot.y = height / 2 + verticalAxis;
-						dot.x = randomNumberBetween((width / 2) - horizontalAxis, (width / 2) + horizontalAxis)
+						dot.y = apertureCenterY + verticalAxis;
+						dot.x = randomNumberBetween((apertureCenterX) - horizontalAxis, (apertureCenterX) + horizontalAxis)
 					} else { //If dots move downwards, then appear on top edge
-						dot.y = height / 2 - verticalAxis;
-						dot.x = randomNumberBetween((width / 2) - horizontalAxis, (width / 2) + horizontalAxis)
+						dot.y = apertureCenterY - verticalAxis;
+						dot.x = randomNumberBetween((apertureCenterX) - horizontalAxis, (apertureCenterX) + horizontalAxis)
 					}
 				}
 			} //End of apertureType == 3
@@ -722,26 +764,26 @@ jsPsych.plugins["RDK"] = (function() {
 
 		//Calculate the POSITIVE y value of a point on the edge of the ellipse given an x-value
 		function yValuePositive(x) {
-			var x = x - (width / 2); //Bring it back to the (0,0) center to calculate accurately (ignore the y-coordinate because it is not necessary for calculation)
-			return verticalAxis * Math.sqrt(1 - (Math.pow(x, 2) / Math.pow(horizontalAxis, 2))) + height / 2; //Calculated the positive y value and added height/2 to recenter it on the screen 
+			var x = x - (apertureCenterX); //Bring it back to the (0,0) center to calculate accurately (ignore the y-coordinate because it is not necessary for calculation)
+			return verticalAxis * Math.sqrt(1 - (Math.pow(x, 2) / Math.pow(horizontalAxis, 2))) + apertureCenterY; //Calculated the positive y value and added apertureCenterY to recenter it on the screen 
 		}
 
 		//Calculate the NEGATIVE y value of a point on the edge of the ellipse given an x-value
 		function yValueNegative(x) {
-			var x = x - (width / 2); //Bring it back to the (0,0) center to calculate accurately (ignore the y-coordinate because it is not necessary for calculation)
-			return -verticalAxis * Math.sqrt(1 - (Math.pow(x, 2) / Math.pow(horizontalAxis, 2))) + height / 2; //Calculated the negative y value and added height/2 to recenter it on the screen
+			var x = x - (apertureCenterX); //Bring it back to the (0,0) center to calculate accurately (ignore the y-coordinate because it is not necessary for calculation)
+			return -verticalAxis * Math.sqrt(1 - (Math.pow(x, 2) / Math.pow(horizontalAxis, 2))) + apertureCenterY; //Calculated the negative y value and added apertureCenterY to recenter it on the screen
 		}
 
 		//Calculate the POSITIVE x value of a point on the edge of the ellipse given a y-value
 		function xValuePositive(y) {
-			var y = y - (height / 2); //Bring it back to the (0,0) center to calculate accurately (ignore the x-coordinate because it is not necessary for calculation)
-			return horizontalAxis * Math.sqrt(1 - (Math.pow(y, 2) / Math.pow(verticalAxis, 2))) + width / 2; //Calculated the positive x value and added width/2 to recenter it on the screen
+			var y = y - (apertureCenterY); //Bring it back to the (0,0) center to calculate accurately (ignore the x-coordinate because it is not necessary for calculation)
+			return horizontalAxis * Math.sqrt(1 - (Math.pow(y, 2) / Math.pow(verticalAxis, 2))) + apertureCenterX; //Calculated the positive x value and added apertureCenterX to recenter it on the screen
 		}
 
 		//Calculate the NEGATIVE x value of a point on the edge of the ellipse given a y-value
 		function xValueNegative(y) {
-			var y = y - (height / 2); //Bring it back to the (0,0) center to calculate accurately (ignore the x-coordinate because it is not necessary for calculation)
-			return -horizontalAxis * Math.sqrt(1 - (Math.pow(y, 2) / Math.pow(verticalAxis, 2))) + width / 2; //Calculated the negative x value and added width/2 to recenter it on the screen
+			var y = y - (apertureCenterY); //Bring it back to the (0,0) center to calculate accurately (ignore the x-coordinate because it is not necessary for calculation)
+			return -horizontalAxis * Math.sqrt(1 - (Math.pow(y, 2) / Math.pow(verticalAxis, 2))) + apertureCenterX; //Calculated the negative x value and added apertureCenterX to recenter it on the screen
 		}
 
 		//Calculate a random x and y coordinate in the ellipse
@@ -755,16 +797,16 @@ jsPsych.plugins["RDK"] = (function() {
 				x = Math.sqrt(rho) * Math.cos(phi);
 				y = Math.sqrt(rho) * Math.sin(phi);
 
-				x = x * horizontalAxis + width / 2;
-				y = y * verticalAxis + height / 2;
+				x = x * horizontalAxis + apertureCenterX;
+				y = y * verticalAxis + apertureCenterY;
 
 				dot.x = x;
 				dot.y = y;
 			}
 			//For square and rectangle
 			else if (apertureType == 3 || apertureType == 4) {
-				dot.x = randomNumberBetween((width / 2) - horizontalAxis, (width / 2) + horizontalAxis); //Between the left and right edges of the square / rectangle
-				dot.y = randomNumberBetween((height / 2) - verticalAxis, (height / 2) + verticalAxis); //Between the top and bottom edges of the square / rectangle
+				dot.x = randomNumberBetween((apertureCenterX) - horizontalAxis, (apertureCenterX) + horizontalAxis); //Between the left and right edges of the square / rectangle
+				dot.y = randomNumberBetween((apertureCenterY) - verticalAxis, (apertureCenterY) + verticalAxis); //Between the top and bottom edges of the square / rectangle
 			}
 
 			return dot;
@@ -780,7 +822,10 @@ jsPsych.plugins["RDK"] = (function() {
 			//frameRequestID saves a long integer that is the ID of this frame request. The ID is then used to terminate the request below.
 			var frameRequestID = window.requestAnimationFrame(animate);
 			
-			//Timestamp used to calculate the time interval between frames
+			//Start to listen to subject's key responses
+			startKeyboardListener(); 
+									
+			//Delare a timestamp
 			var previousTimestamp;
 			
 			function animate() {
@@ -792,33 +837,28 @@ jsPsych.plugins["RDK"] = (function() {
 				else {
 					frameRequestID = window.requestAnimationFrame(animate); //Calls for another frame request
 					
-					//If it is the first frame, then set the timing variables up
-					if(firstFrame){
-						
-						//Start to listen to subject's key responses
-						startKeyboardListener(); 
-						
+					//If the timer has not been started and it is set, then start the timer
+					if ( (!timerHasStarted) && (trial.trial_duration > 0) ){
 						//If the trial duration is set, then set a timer to count down and call the end_trial function when the time is up
 						//(If the subject did not press a valid keyboard response within the trial duration, then this will end the trial)
-						if (trial.trial_duration > 0) {
-							timeoutID = window.setTimeout(end_trial,trial.trial_duration); //This timeoutID is then used to cancel the timeout should the subject press a valid key
-						}
-						
-						//Set the timestamp to calculate the time per frame
-						previousTimestamp = performance.now();
-						
-						//Set the firstFrame to false so that the next frame will be the normal dot motion animation
-						firstFrame = false;
-					}
-					//If it is not the first frame, then update and draw on canvas
-					else{
-						updateDots(); //Update the dots to their new positions
-						draw(); //Draw the dots on the canvas
-						var currentTimeStamp = performance.now(); //Variable to hold current timestamp
-						frameRate.push(currentTimeStamp -previousTimestamp); //Push the interval into the frameRate array
-						previousTimestamp = currentTimeStamp; //Reset the timestamp
+						timeoutID = window.setTimeout(end_trial,trial.trial_duration); //This timeoutID is then used to cancel the timeout should the subject press a valid key
+						//The timer has started, so we set the variable to true so it does not start more timers
+						timerHasStarted = true;
 					}
 					
+					updateDots(); //Update the dots to their new positions
+					draw(); //Draw the dots on the canvas
+					
+					//If this is before the first frame, then start the timestamp
+					if(previousTimestamp === undefined){
+						previousTimestamp = performance.now();
+					}
+					//Else calculate the time and push it into the array
+					else{
+						var currentTimeStamp = performance.now(); //Variable to hold current timestamp
+						frameRate.push(currentTimeStamp - previousTimestamp); //Push the interval into the frameRate array
+						previousTimestamp = currentTimeStamp; //Reset the timestamp
+					}
 				}
 			}
 		}

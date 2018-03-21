@@ -139,7 +139,7 @@ function pest(dataObject){
 			//Change firstStep to be false because subsequent steps will have a previousStepDirection to compare it to
 			firstStep = false;
 		}
-		//Else, set the reversal to whether the previous step direction corresponsds to the current step direction
+		//Else, set the reversal to whether the previous step direction corresponds to the current step direction
 		else{
 			reversal = (previousStepDirection == currentStepDirection) ? false : true;
 		}
