@@ -1,18 +1,18 @@
 function pest(dataObject){
 	
 	//Starting variables
-	var currentIntensity = dataObject.starting_intensity || 0.7; //Starting intensity
+	var currentIntensity = assignParameterValue(dataObject.starting_intensity, 0.7); //Starting intensity
 
 	//Variables for Down/Up
-	var downThreshold = dataObject.down_threshold || 3; // 3 Down
-	var upThreshold = dataObject.up_threshold || 1; // 1 Up
-	var upperIntensityLimit = dataObject.upper_intensity_limit || 1;
-	var lowerIntensityLimit = dataObject.lower_intensity_limit || 0.000000001;
+	var downThreshold = assignParameterValue(dataObject.down_threshold, 3); // 3 Down
+	var upThreshold = assignParameterValue(dataObject.up_threshold, 1); // 1 Up
+	var upperIntensityLimit = assignParameterValue(dataObject.upper_intensity_limit, 1);
+	var lowerIntensityLimit = assignParameterValue(dataObject.lower_intensity_limit, 0);
 
 	//Variables for PEST
-	var currentStepSize = dataObject.starting_step_size || 0.32; //Starting step size
-	var minimumStepSize = dataObject.min_step_size || 0.01; //Smallest step size
-	var maximumStepSize = dataObject.max_step_size || 0.32; //Largest step size
+	var currentStepSize = assignParameterValue(dataObject.starting_step_size, 0.32); //Starting step size
+	var minimumStepSize = assignParameterValue(dataObject.min_step_size, 0.01); //Smallest step size
+	var maximumStepSize = assignParameterValue(dataObject.max_step_size, 0.32); //Largest step size
 
 	//Initialize fixed Down/Up variables 
 	//(Do not change unless you want to deviate from the normal PEST procedure)
@@ -276,5 +276,14 @@ function pest(dataObject){
 	}//End of decreaseIntensity
 
 	//----------------Staircasing Functions End------------------
+	
+	//----------------General Functions Begin------------------
+	
+	//Function to assign the default values for the staircase parameters
+	function assignParameterValue(argument, defaultValue){
+		return typeof argument !== 'undefined' ? argument : defaultValue;
+	}
+	
+	//----------------General Functions End------------------
 	
 }//End of function pest(dataObject)
