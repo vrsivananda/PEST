@@ -175,9 +175,9 @@ function pest(dataObject){
 			
 			//If the streak has hit the streak threshold, then increase the step size by doubling it [Rule 3]
 			if (stepStreakCounter >= currentStepThreshold){
+				console.log("Doubling step size.");
 				doubleStepSize();
 				stepSizeJustDoubled = true;
-				console.log("Step size doubled.");
 			}
 			//Else step size did not double
 			else{
@@ -193,8 +193,8 @@ function pest(dataObject){
 	}//End of changeStepSizePEST
 
 	//Function to make sure that the intensity is still in range
-	function intensityInRange(theintensity){
-		return ((theintensity <= upperIntensityLimit) && (theintensity >= lowerIntensityLimit));
+	function intensityInRange(theIntensity){
+		return ((theIntensity < upperIntensityLimit) && (theIntensity > lowerIntensityLimit));
 	}
 
 	//Function that halves the step size
@@ -213,14 +213,15 @@ function pest(dataObject){
 
 	//Function that doubles the step size
 	function doubleStepSize(){
-		//Check to make sure that it is above the minimum
+		//Check to make sure that it is below the maximum
 		if(currentStepSize*2 < maximumStepSize){
 			currentStepSize *= 2;
+			console.log("Step size doubled.");
 		}
 		//If not, then set it to the maximum
 		else{
-			console.log("Maximum step size reached. Setting currentStepSize to maximumStepSize.");
 			currentStepSize = maximumStepSize;
+			console.log("Maximum step size reached. currentStepSize set to maximumStepSize.");
 		}
 	}//End of doubleStepSize
 
@@ -238,7 +239,11 @@ function pest(dataObject){
 			
 			//Only update the step size if we have not hit the lower or upper limit
 			if(!limitHit){
-				currentStepSize = currentIntensity - lowerIntensityLimit;
+				//Calculate the distance from threshold
+				var distanceFromThreshold = currentIntensity - lowerIntensityLimit;
+				console.log('distanceFromThreshold: ' + distanceFromThreshold);
+				//Set the current step size to be the larger of distance from threshold and minimum step size
+				currentStepSize = distanceFromThreshold > minimumStepSize ? distanceFromThreshold : minimumStepSize;
 				console.log("lowerIntensityLimit reached. currentStepSize: " + currentStepSize);
 			}
 			
@@ -264,7 +269,13 @@ function pest(dataObject){
 			
 			//Only update the step size if we have not hit the lower or upper limit
 			if(!limitHit){
-				currentStepSize = upperIntensityLimit - currentIntensity;
+				//Calculate the distance from threshold
+				var distanceFromThreshold = upperIntensityLimit - currentIntensity;
+				console.log('upperIntensityLimit: ' + upperIntensityLimit);
+				console.log('currentIntensity: ' + currentIntensity);
+				console.log('distanceFromThreshold: ' + distanceFromThreshold);
+				//Set the current step size to be the larger of distance from threshold and minimum step size
+				currentStepSize = distanceFromThreshold > minimumStepSize ? distanceFromThreshold : minimumStepSize;
 				console.log("upperIntensityLimit reached. currentStepSize: " + currentStepSize);
 			}
 			
